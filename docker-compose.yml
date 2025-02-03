@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  postgres:
+    container_name: gestao_vagas_postgres
+    image: postgres:latest
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=gestao_vagas
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  sonarqube:
+    image: sonarqube:lts
+    container_name: sonarqube
+    restart: always
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECK_DISABLE="true"
+      - SONAR_JDBC_URL=jdbc:postgresql://postgres:5432/gestao_vagas
+      - SONAR_JDBC_USERNAME=sonar
+      - SONAR_JDBC_PASSWORD=sonar
+      - SONAR_SEARCH_MEMORY=2G
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
