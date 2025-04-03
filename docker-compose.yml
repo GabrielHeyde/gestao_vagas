@@ -1,33 +1,49 @@
-version: '3.8'
+version: "3.8"
+
+networks:
+  gv_network:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:
 
 services:
   postgres:
     container_name: gestao_vagas_postgres
-    image: postgres:latest
-    restart: always
+    image: postgres
     ports:
-      - "5432:5432"
+      - 5432:5432
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=admin
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=#Ogum2310
       - POSTGRES_DB=gestao_vagas
+
+    networks:
+      - gv_network
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  sonarqube:
-    image: sonarqube:lts
-    container_name: sonarqube
-    restart: always
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - gv_network
     ports:
-      - "9000:9000"
-    environment:
-      - SONAR_ES_BOOTSTRAP_CHECK_DISABLE="true"
-      - SONAR_JDBC_URL=jdbc:postgresql://postgres:5432/gestao_vagas
-      - SONAR_JDBC_USERNAME=sonar
-      - SONAR_JDBC_PASSWORD=sonar
-      - SONAR_SEARCH_MEMORY=2G
-    depends_on:
-      - postgres
+      - 9090:9090
 
-volumes:
-  postgres_data:
+  grafana:
+    image: grafana/grafana-oss
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      - GF_PLUGINS_PREINSTALL=grafana-clock-panel
+    ports:
+      - "3000:3000"
+    networks:
+      - gv_network
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
