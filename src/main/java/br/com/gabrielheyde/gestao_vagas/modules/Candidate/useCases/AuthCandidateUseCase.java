@@ -22,7 +22,7 @@ import br.com.gabrielheyde.gestao_vagas.modules.Candidate.DTO.AuthCandidateRespo
 @Service
 public class AuthCandidateUseCase {
 
-    @Value("${security.token.secret.candidate}")
+    @Value("${security.token.secret}")
     private String secretKey;
 
     @Autowired
@@ -33,31 +33,31 @@ public class AuthCandidateUseCase {
 
     public AuthCandidateResponseDTO execute(AuthCandidateRequestDTO authCandidateRequestDTO) throws AuthenticationException {
         var candidate = this.candidateRepository.findByUsername(authCandidateRequestDTO.username())
-        .orElseThrow(() -> {
-            throw new UsernameNotFoundException("Username/password incorrect");
-        });
+                .orElseThrow(() -> {
+                    throw new UsernameNotFoundException("Username/password incorrect");
+                });
 
         var passwordMatches = this.passwordEncoder
-        .matches(authCandidateRequestDTO.password(), candidate.getPassword());
+                .matches(authCandidateRequestDTO.password(), candidate.getPassword());
 
-        if(passwordMatches == false) {
+        if (passwordMatches == false) {
             throw new AuthenticationException();
         }
 
         Algorithm algorithm = Algorithm.HMAC256(secretKey);
         var expiresIn = Instant.now().plus(Duration.ofMinutes(10));
         var token = JWT.create()
-        .withIssuer("javagas")
-        .withSubject(candidate.getId().toString())
-        .withClaim("roles", Arrays.asList("CANDIDATE"))
-        .withExpiresAt(expiresIn)
-        .sign(algorithm);
+                .withIssuer("javagas")
+                .withSubject(candidate.getId().toString())
+                .withClaim("roles", Arrays.asList("CANDIDATE"))
+                .withExpiresAt(expiresIn)
+                .sign(algorithm);
 
         var authCandidateResponse = AuthCandidateResponseDTO.builder()
-        .expires_in(expiresIn.toEpochMilli())
-        .access_token(token).build();
+                .expires_in(expiresIn.toEpochMilli())
+                .access_token(token).build();
 
         return authCandidateResponse;
     }
-    
+
 }
