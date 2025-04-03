@@ -1,15 +1,30 @@
+# Fase de build
 FROM ubuntu:latest AS build
 
-RUN apt-get update
-RUN apt-get install openjdk-17-jdk -y
+# Atualiza os pacotes e instala o JDK e Maven
+RUN apt-get update && apt-get install -y openjdk-17-jdk maven
+
+# Define o diretório de trabalho
+WORKDIR /app
+
+# Copia apenas os arquivos necessários primeiro (para melhorar o cache)
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# Agora copia o restante do código
 COPY . .
 
-RUN apt-get install maven -y
-RUN mvn clean install
+# Compila o projeto
+RUN mvn clean package -DskipTests
 
+# Fase de execução
 FROM openjdk:17-jdk-slim
+
+# Define a porta da aplicação
 EXPOSE 8080
 
-COPY --from=build /target/gestao_vagas-0.0.1.jar app.jar
+# Copia o JAR gerado no build
+COPY --from=build /app/target/gestao_vagas-0.0.1.jar app.jar
 
-ENTRYPOINT [ "java", "-jar", "app.jar" ]
+# Executa a aplicação
+ENTRYPOINT ["java", "-jar", "app.jar"]
